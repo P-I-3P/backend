@@ -21,6 +21,7 @@ router.get("/aluno/minhas-coisas", ...requireAluno, (req, res) => res.json({ ok:
 */
 import express from "express";
 import alunosRoutes from "./routes/alunosRouter.js";
+import * as functions from "firebase-functions";
 
 const router = express();
 
