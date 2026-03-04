@@ -21,6 +21,10 @@ router.get("/aluno/minhas-coisas", ...requireAluno, (req, res) => res.json({ ok:
 */
 import express from "express";
 import alunosRoutes from "./routes/alunosRouter.js";
+import cursosRoutes from "./routes/cursosRouter.js";
+import disciplinasRoutes from "./routes/disciplinasRouter.js";
+
+
 import * as functions from "firebase-functions";
 
 const router = express();
@@ -29,6 +33,10 @@ router.use(express.json());
 
 // rotas
 router.use("/alunos", alunosRoutes);
+router.use("/cursos", cursosRoutes);
+router.use("/cursos/:cursoId/disciplinas", disciplinasRoutes);
+
+
 
 router.get("/", (req, res) => {
   res.json({ status: "API funcionando" });
