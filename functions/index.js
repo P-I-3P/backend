@@ -23,6 +23,7 @@ import express from "express";
 import alunosRoutes from "./routes/alunosRouter.js";
 import cursosRoutes from "./routes/cursosRouter.js";
 import disciplinasRoutes from "./routes/disciplinasRouter.js";
+import certificadosRoutes from "./routes/certificadosRouter.js";
 
 
 import * as functions from "firebase-functions";
@@ -35,6 +36,7 @@ router.use(express.json());
 router.use("/alunos", alunosRoutes);
 router.use("/cursos", cursosRoutes);
 router.use("/cursos/:cursoId/disciplinas", disciplinasRoutes);
+router.use("/certificados", certificadosRoutes);
 
 
 
