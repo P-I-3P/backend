@@ -1,12 +1,23 @@
 import express from "express";
 import alunosRoutes from "./routes/alunosRouter.js";
 import * as functions from "firebase-functions";
+import notificacoesRoutes from "./routes/notificacoesRouter.js";
+import cursosRoutes from "./routes/cursosRouter.js";
+import cors from "cors";
+
+
 
 const router = express();
 router.use(express.json());
+router.use(cors());
+
 
 // rotas
 router.use("/alunos", alunosRoutes);
+router.use("/notificacoes", notificacoesRoutes);
+router.use("/cursos", cursosRoutes);
+
+
 
 
 router.get("/", (req, res) => {

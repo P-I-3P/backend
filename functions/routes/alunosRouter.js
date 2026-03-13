@@ -5,6 +5,6 @@ import { requireAdmin } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
 // somente admin pode criar aluno
-router.post("/criar", ...requireAdmin, criarAluno);
+router.post("/", ...requireAdmin, criarAluno);
 
 export default router;
