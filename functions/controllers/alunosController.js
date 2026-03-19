@@ -1,10 +1,27 @@
 import { db, auth_firebase } from "../config/firebase.js";
 import { transporter } from "../config/nodemailer.js";
 
+// GET /alunos
+export async function listarAlunos(req, res) {
+  try {
+    const { cursoId } = req.query;
+    let query = db.collection("users").where("role", "==", "aluno");
+    if (cursoId) {
+      query = query.where("cursoId", "==", cursoId);
+    }
+    const snapshot = await query.get();
+    const alunos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return res.json(alunos);
+  } catch (error) {
+    console.error("Erro ao listar alunos:", error);
+    return res.status(500).json({ message: "Erro ao listar alunos." });
+  }
+}
+
 // POST /alunos
 export async function criarAluno(req, res) {
   try {
-    const { nome, email, cursoId } = req.body;
+    const { nome, email, cursoId, turmaId } = req.body;
     if (!nome || !email || !cursoId) {
       return res.status(400).json({ message: "Campos nome, email e cursoId são obrigatórios." });
     }
@@ -13,6 +30,16 @@ export async function criarAluno(req, res) {
     const cursoDoc = await db.collection("cursos").doc(cursoId).get();
     if (!cursoDoc.exists) {
       return res.status(404).json({ message: "Curso não encontrado." });
+    }
+
+    // Verifica turma se informada
+    let turmaNome = null;
+    if (turmaId) {
+      const turmaDoc = await db.collection("turmas").doc(turmaId).get();
+      if (!turmaDoc.exists) {
+        return res.status(404).json({ message: "Turma não encontrada." });
+      }
+      turmaNome = turmaDoc.data().nome;
     }
 
     // Cria usuário no Firebase Auth
@@ -26,7 +53,7 @@ export async function criarAluno(req, res) {
     await auth_firebase.setCustomUserClaims(userRecord.uid, { role: "aluno" });
 
     // Cria documento no Firestore
-    await db.collection("users").doc(userRecord.uid).set({
+    const userData = {
       nome,
       email,
       role: "aluno",
@@ -35,7 +62,13 @@ export async function criarAluno(req, res) {
       cursoNome: cursoDoc.data().nome,
       createdAt: Date.now(),
       createdBy: "admin",
-    });
+    };
+    if (turmaId) {
+      userData.turmaId = turmaId;
+      userData.turmaNome = turmaNome;
+    }
+
+    await db.collection("users").doc(userRecord.uid).set(userData);
 
     const senhaTemporaria = email.split("@")[0] + "2025!";
 

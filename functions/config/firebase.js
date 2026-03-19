@@ -6,7 +6,6 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// carrega functions/.env
 dotenv.config({ path: join(__dirname, "..", ".env") });
 
 function loadServiceAccountFromEnv() {
@@ -16,9 +15,8 @@ function loadServiceAccountFromEnv() {
   const jsonStr = Buffer.from(b64, "base64").toString("utf8");
   const serviceAccount = JSON.parse(jsonStr);
 
-  // validações mínimas
   if (!serviceAccount.private_key || !serviceAccount.client_email) {
-    throw new Error("Service account inválido (sem private_key/client_email)");
+    throw new Error("Service account inválido");
   }
 
   return serviceAccount;
@@ -27,17 +25,14 @@ function loadServiceAccountFromEnv() {
 const serviceAccount = loadServiceAccountFromEnv();
 
 if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  } catch (error) {
-    console.error("Erro ao inicializar o Firebase Admin:", error);
-    throw new Error("Falha na inicialização do Firebase Admin SDK");
-  }
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: process.env.APP_STORAGE_BUCKET,
+  });
 }
 
 const db = admin.firestore();
 const auth_firebase = admin.auth();
+const bucket = admin.storage().bucket();
 
-export { admin, db, auth_firebase };
+export { admin, db, auth_firebase, bucket };
