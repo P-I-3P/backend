@@ -3,17 +3,34 @@ import { auth_firebase } from "../config/firebase.js";
 export async function requireAuth(req, res, next) {
   try {
     const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    let decoded;
 
-    if (!token) return res.status(401).json({ error: "Token ausente" });
-
-    const decoded = await auth_firebase.verifyIdToken(token);
+    if (authHeader.startsWith("Bearer ")) {
+      // Fluxo 1: Token enviado no Header (Vida útil: 1 hora)
+      const token = authHeader.slice(7);
+      decoded = await auth_firebase.verifyIdToken(token);
+    } else if (req.cookies && req.cookies.session) {
+      // Fluxo 2: Cookie de Sessão (Vida útil: até 14 dias)
+      // checkRevoked: true garante que se a conta for desativada, a sessão cai
+      const sessionCookie = req.cookies.session;
+      decoded = await auth_firebase.verifySessionCookie(sessionCookie, true);
+    } else {
+      return res.status(401).json({ error: "Token ou Cookie de sessão ausente" });
+    }
 
     req.user = {
       uid: decoded.uid,
       role: decoded.role || "aluno",
       email: decoded.email,
     };
+
+    // Regra de Negócio: Alunos só podem acessar com e-mail institucional
+    if (req.user.role === "aluno") {
+      const email = req.user.email || "";
+      if (!email.endsWith("@edu.pe.senac.br")) {
+        return res.status(403).json({ error: "Acesso negado. Alunos devem usar e-mail institucional (@edu.pe.senac.br)" });
+      }
+    }
 
     return next();
   } catch (e) {
