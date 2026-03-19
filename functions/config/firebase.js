@@ -1,7 +1,5 @@
 import admin from "firebase-admin";
 import dotenv from "dotenv";
-import { GoogleAuth } from "google-auth-library";
-import { google } from "googleapis";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
@@ -41,23 +39,5 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 const auth_firebase = admin.auth();
-
-
-/*
-const auth = new GoogleAuth({
-  credentials: {
-    client_email: serviceAccount.client_email,
-    private_key: serviceAccount.private_key,
-  },
-  scopes: [
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/spreadsheets",
-  ],
-});
-
-const sheets = google.sheets({ version: "v4", auth });
-const drive = google.drive({ version: "v3", auth });
-
-*/
 
 export { admin, db, auth_firebase };
