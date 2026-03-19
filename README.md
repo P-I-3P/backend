@@ -4,6 +4,7 @@
 1. [Visão Geral](#visão-geral)
 2. [Arquitetura](#arquitetura)
 3. [SecurityService](#securityservice)
+4. [Autenticação e Sessões](#autenticação-e-sessões)
 4. [CertificadoService](#certificadoservice)
 5. [Fluxo Completo](#fluxo-completo)
 6. [Endpoints da API](#endpoints-da-api)
@@ -121,6 +122,70 @@ console.log(codigo);
 
 **Detalhe Importante:** 
 O código é determinístico - o mesmo ID sempre gerará o mesmo código. Isso permite regenerar o code se necessário.
+
+---
+
+## 🍪 Autenticação e Sessões
+
+O sistema suporta dois modos de autenticação para atender diferentes casos de uso.
+
+### 1. Autenticação Padrão (ID Token)
+- **Uso:** Aplicações móveis ou interações rápidas.
+- **Validade:** 1 hora (fixo pelo Firebase).
+- **Como usar:** Enviar o token no Header `Authorization: Bearer <token>`.
+
+### 2. Autenticação via Session Cookies (Longa Duração)
+- **Uso:** Painéis administrativos Web onde o usuário precisa ficar logado por dias.
+- **Validade:** 14 dias (máximo permitido pelo Firebase).
+- **Segurança:** Cookies `HttpOnly` e `Secure`.
+
+#### Como implementar o Login de Sessão (Frontend):
+
+1. **Login no Firebase:** O usuário faz login no cliente (frontend) e obtém o `idToken`.
+2. **Troca de Token:** O frontend envia esse `idToken` para o backend.
+3. **Criação do Cookie:** O backend verifica o token e retorna um cookie de sessão.
+
+**Exemplo de requisição (JavaScript):**
+
+```javascript
+// 1. Obter token após login
+const idToken = await firebase.auth().currentUser.getIdToken();
+
+// 2. Enviar para o backend (trocar por cookie)
+// IMPORTANTE: 'credentials: include' ou 'withCredentials: true' é OBRIGATÓRIO
+await fetch('http://localhost:5000/auth/session-login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ idToken }),
+  credentials: 'include' 
+});
+
+// 3. A partir daqui, o navegador envia o cookie automaticamente
+await fetch('http://localhost:5000/cursos', {
+  method: 'GET',
+  credentials: 'include'
+});
+```
+
+**Endpoints Relacionados:**
+- `POST /auth/session-login`: Cria a sessão de 14 dias.
+- `POST /auth/session-logout` (Recomendado criar): Para limpar o cookie.
+
+### 3. Login Super Admin (Backend Direct)
+- **Uso:** Acesso de emergência ou scripts de automação.
+- **Restrição:** Aceita **apenas** o email `joaovictortwrp@gmail.com`.
+
+**Endpoint:** `POST /auth/super-admin-login`
+
+**Body:**
+```json
+{
+  "email": "joaovictortwrp@gmail.com",
+  "password": "senha_super_secreta"
+}
+```
+
+**Retorno:** JSON contendo `idToken` para uso imediato.
 
 ---
 

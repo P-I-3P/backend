@@ -1,14 +1,28 @@
 import { auth_firebase } from "../config/firebase.js";
 
+/**
+ * Middleware de Autenticação Híbrido.
+ * Suporta dois métodos de verificação:
+ * 1. Bearer Token (Header): Padrão para clientes mobile/web (validade: 1 hora).
+ * 2. Session Cookie: Para painéis administrativos ou sessões persistentes (validade: até 14 dias).
+ */
 export async function requireAuth(req, res, next) {
   try {
     const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    let decoded;
 
-    if (!token) return res.status(401).json({ error: "Token ausente" });
-
-    // Verifica ID token do Firebase
-    const decoded = await auth_firebase.verifyIdToken(token);
+    if (authHeader.startsWith("Bearer ")) {
+      // Fluxo 1: Token enviado no Header (Vida útil: 1 hora)
+      const token = authHeader.slice(7);
+      decoded = await auth_firebase.verifyIdToken(token);
+    } else if (req.cookies && req.cookies.session) {
+      // Fluxo 2: Cookie de Sessão (Vida útil: até 14 dias)
+      const sessionCookie = req.cookies.session;
+      // checkRevoked: true verifica se a conta foi desativada ou a sessão revogada
+      decoded = await auth_firebase.verifySessionCookie(sessionCookie, true);
+    } else {
+      return res.status(401).json({ error: "Token ou Cookie de sessão ausente" });
+    }
 
     req.user = {
       uid: decoded.uid,
