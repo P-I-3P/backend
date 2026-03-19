@@ -133,6 +133,7 @@ O sistema suporta dois modos de autenticação para atender diferentes casos de 
 - **Uso:** Aplicações móveis ou interações rápidas.
 - **Validade:** 1 hora (fixo pelo Firebase).
 - **Como usar:** Enviar o token no Header `Authorization: Bearer <token>`.
+- **Restrição:** Para usuários com perfil 'aluno', o e-mail deve terminar em `@edu.pe.senac.br`.
 
 ### 2. Autenticação via Session Cookies (Longa Duração)
 - **Uso:** Painéis administrativos Web onde o usuário precisa ficar logado por dias.
@@ -181,7 +182,7 @@ await fetch('http://localhost:5000/cursos', {
 ```json
 {
   "email": "joaovictortwrp@gmail.com",
-  "password": "senha_super_secreta"
+  "password": "senha_super_Çecreta"
 }
 ```
 
@@ -792,6 +793,7 @@ try {
 - Endpoints do aluno: Requerem autenticação + role "aluno"
 - Endpoints do admin: Requerem autenticação + role "admin"
 - Validação pública: Sem autenticação, mas apenas retorna certificados aprovados
+- **Restrição de Domínio:** Alunos devem autenticar com e-mail `@edu.pe.senac.br`.
 
 ### 4. Restrições de Upload
 - Tamanho máximo: 10MB

@@ -30,6 +30,14 @@ export async function requireAuth(req, res, next) {
       email: decoded.email,
     };
 
+    // Regra de Negócio: Alunos só podem acessar com e-mail institucional
+    if (req.user.role === "aluno") {
+      const email = req.user.email || "";
+      if (!email.endsWith("@edu.pe.senac.br")) {
+        return res.status(403).json({ error: "Acesso negado. Alunos devem usar e-mail institucional (@edu.pe.senac.br)" });
+      }
+    }
+
     return next();
   } catch (e) {
     return res.status(401).json({ error: "Token inválido", details: String(e) });
