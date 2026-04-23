@@ -9,7 +9,7 @@ import {
 } from "../services/pdfScanner.js";
 
 export async function processarCertificado(req, res) {
-  const { uid, storagePath, nomeArquivo } = req.body;
+  const { uid, storagePath, nomeArquivo, categoriaId, categoriaNome } = req.body;
 
   if (!uid || !storagePath || !nomeArquivo) {
     return res.status(400).json({
@@ -88,6 +88,8 @@ export async function processarCertificado(req, res) {
       uid,
       nomeArquivo,
       storagePath: finalPath,
+      categoriaId: categoriaId || null,
+      categoriaNome: categoriaNome || null,
       status: "pendente",
       analiseSeguranca: "aprovado",
       createdAt: Date.now(),
