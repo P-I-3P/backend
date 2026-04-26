@@ -2,9 +2,15 @@ import { db } from "../config/firebase.js";
 
 const COLLECTION = "turmas";
 
-async function resolverCursoPermitido(req) {
+function chunk(array, size) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) chunks.push(array.slice(i, i + size));
+  return chunks;
+}
+
+async function resolverCursosPermitidos(req) {
   if (req.user?.role === "superAdmin") {
-    return req.query.cursoId || null;
+    return req.query.cursoId ? [req.query.cursoId] : [];
   }
 
   const userDoc = await db.collection("users").doc(req.user.uid).get();
@@ -14,28 +20,44 @@ async function resolverCursoPermitido(req) {
     throw error;
   }
 
-  const cursoId = userDoc.data().cursoId;
-  if (!cursoId) {
+  const userData = userDoc.data();
+  const cursoIds = Array.isArray(userData.cursoIds)
+    ? userData.cursoIds
+    : userData.cursoId
+      ? [userData.cursoId]
+      : [];
+
+  if (cursoIds.length === 0) {
     const error = new Error("Admin sem curso vinculado.");
     error.statusCode = 403;
     throw error;
   }
 
-  return cursoId;
+  if (req.query.cursoId && !cursoIds.includes(req.query.cursoId)) {
+    const error = new Error("Sem permissao para acessar este curso.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return req.query.cursoId ? [req.query.cursoId] : cursoIds;
 }
 
 // GET /turmas?cursoId=xxx
 export async function listarTurmas(req, res) {
   try {
-    const cursoId = await resolverCursoPermitido(req);
-    let query;
+    const cursoIds = await resolverCursosPermitidos(req);
 
-    if (cursoId) {
-      query = db.collection(COLLECTION).where("cursoId", "==", cursoId);
-    } else {
-      query = db.collection(COLLECTION).orderBy("criadoEm", "desc");
+    if (cursoIds.length > 0) {
+      const docs = new Map();
+      for (const ids of chunk(cursoIds, 10)) {
+        const snapshot = await db.collection(COLLECTION).where("cursoId", "in", ids).get();
+        snapshot.docs.forEach((doc) => docs.set(doc.id, doc));
+      }
+      const turmas = Array.from(docs.values()).map((doc) => ({ id: doc.id, ...doc.data() }));
+      return res.json(turmas);
     }
 
+    const query = db.collection(COLLECTION).orderBy("criadoEm", "desc");
     const snapshot = await query.get();
     const turmas = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     return res.json(turmas);
@@ -56,8 +78,8 @@ export async function buscarTurma(req, res) {
     }
 
     if (req.user?.role === "admin") {
-      const cursoIdPermitido = await resolverCursoPermitido(req);
-      if (doc.data().cursoId !== cursoIdPermitido) {
+      const cursoIdsPermitidos = await resolverCursosPermitidos(req);
+      if (!cursoIdsPermitidos.includes(doc.data().cursoId)) {
         return res.status(403).json({ message: "Sem permissao para acessar esta turma." });
       }
     }
@@ -80,6 +102,13 @@ export async function criarTurma(req, res) {
     const cursoDoc = await db.collection("cursos").doc(cursoId).get();
     if (!cursoDoc.exists) {
       return res.status(404).json({ message: "Curso nao encontrado." });
+    }
+
+    if (req.user?.role === "admin") {
+      const cursoIdsPermitidos = await resolverCursosPermitidos(req);
+      if (!cursoIdsPermitidos.includes(cursoId)) {
+        return res.status(403).json({ message: "Sem permissao para criar turma neste curso." });
+      }
     }
 
     const cursoData = cursoDoc.data();
@@ -121,6 +150,16 @@ export async function atualizarTurma(req, res) {
     const doc = await docRef.get();
     if (!doc.exists) {
       return res.status(404).json({ message: "Turma nao encontrada." });
+    }
+
+    if (req.user?.role === "admin") {
+      const cursoIdsPermitidos = await resolverCursosPermitidos(req);
+      if (!cursoIdsPermitidos.includes(doc.data().cursoId)) {
+        return res.status(403).json({ message: "Sem permissao para atualizar esta turma." });
+      }
+      if (cursoId && !cursoIdsPermitidos.includes(cursoId)) {
+        return res.status(403).json({ message: "Sem permissao para mover turma para este curso." });
+      }
     }
 
     const updateData = {};

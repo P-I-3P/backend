@@ -1,6 +1,7 @@
 import { db } from "../config/firebase.js";
 
 const COLLECTION = "cursos";
+const CARGA_HORARIA_COMPLEMENTAR_PADRAO = 100;
 
 async function gerarCodigoCursoUnico() {
   const tentativasMaximas = 30;
@@ -47,8 +48,11 @@ export async function buscarCurso(req, res) {
 // POST /cursos
 export async function criarCurso(req, res) {
   try {
-    const { nome, turno, cargaHorariaComplementar } = req.body;
-    if (!nome || !turno || !cargaHorariaComplementar) {
+    const { nome, turno } = req.body;
+    const cargaHorariaComplementar = Number(
+      req.body.cargaHorariaComplementar ?? CARGA_HORARIA_COMPLEMENTAR_PADRAO,
+    );
+    if (!nome || !turno || !Number.isFinite(cargaHorariaComplementar) || cargaHorariaComplementar <= 0) {
       return res.status(400).json({ message: "Campos nome, turno e cargaHorariaComplementar são obrigatórios." });
     }
 
@@ -58,14 +62,14 @@ export async function criarCurso(req, res) {
       nome,
       codigo,
       turno,
-      cargaHorariaComplementar: Number(cargaHorariaComplementar),
+      cargaHorariaComplementar,
       coordenadorId: null,
       coordenadorNome: null,
       coordenadorEmail: null,
       criadoEm: new Date().toISOString(),
     });
 
-    return res.status(201).json({ id: docRef.id, nome, codigo, turno, cargaHorariaComplementar: Number(cargaHorariaComplementar) });
+    return res.status(201).json({ id: docRef.id, nome, codigo, turno, cargaHorariaComplementar });
   } catch (error) {
     console.error("Erro ao criar curso:", error);
     return res.status(500).json({ message: "Erro ao criar curso." });
@@ -76,7 +80,7 @@ export async function criarCurso(req, res) {
 export async function atualizarCurso(req, res) {
   try {
     const { id } = req.params;
-    const { nome, codigo, turno, cargaHorariaComplementar } = req.body;
+    const { nome, codigo, turno, cargaHorariaComplementar, regrasAtividades } = req.body;
 
     const docRef = db.collection(COLLECTION).doc(id);
     const doc = await docRef.get();
@@ -89,6 +93,7 @@ export async function atualizarCurso(req, res) {
     if (codigo) updateData.codigo = codigo;
     if (turno) updateData.turno = turno;
     if (cargaHorariaComplementar) updateData.cargaHorariaComplementar = Number(cargaHorariaComplementar);
+    if (Array.isArray(regrasAtividades)) updateData.regrasAtividades = regrasAtividades;
     updateData.atualizadoEm = new Date().toISOString();
 
     await docRef.update(updateData);

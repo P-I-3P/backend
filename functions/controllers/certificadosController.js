@@ -9,7 +9,19 @@ import {
 } from "../services/pdfScanner.js";
 
 export async function processarCertificado(req, res) {
-  const { uid, storagePath, nomeArquivo, categoriaId, categoriaNome } = req.body;
+  const {
+    uid,
+    storagePath,
+    nomeArquivo,
+    categoriaId,
+    categoriaNome,
+    cursoId,
+    cursoNome,
+    cursoCodigo,
+    nomeAluno,
+    emailAluno,
+    observacaoAluno,
+  } = req.body;
 
   if (!uid || !storagePath || !nomeArquivo) {
     return res.status(400).json({
@@ -84,13 +96,34 @@ export async function processarCertificado(req, res) {
     const finalPath = storagePath.replace("certificados_temp/", "certificados/");
     await bucket.file(storagePath).move(finalPath);
 
-    await db.collection("certificados_horas_complementares").add({
+    let alunoData = {};
+    if (!nomeAluno || !emailAluno) {
+      const alunoDoc = await db.collection("users").doc(uid).get();
+      alunoData = alunoDoc.exists ? alunoDoc.data() : {};
+    }
+
+    const certificadoRef = await db.collection("certificados_horas_complementares").add({
       uid,
+      nomeAluno: nomeAluno || alunoData.nome || "",
+      emailAluno: emailAluno || alunoData.email || "",
       nomeArquivo,
       storagePath: finalPath,
       categoriaId: categoriaId || null,
       categoriaNome: categoriaNome || null,
+      cursoId: cursoId || null,
+      cursoNome: cursoNome || null,
+      cursoCodigo: cursoCodigo || null,
       status: "pendente",
+      role: "aluno",
+      contentType: "application/pdf",
+      observacaoAluno: observacaoAluno || "",
+      horasInformadas: null,
+      horasAprovadas: null,
+      observacaoAdmin: null,
+      motivoRejeicao: null,
+      nomeAdmin: null,
+      analisadoPor: null,
+      dataAnalise: null,
       analiseSeguranca: "aprovado",
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -100,6 +133,7 @@ export async function processarCertificado(req, res) {
       ok: true,
       message: "Arquivo analisado e aprovado",
       finalPath,
+      certificadoId: certificadoRef.id,
     });
   } catch (error) {
     console.error("Erro ao processar certificado:", error);
