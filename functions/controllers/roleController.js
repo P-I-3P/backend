@@ -1,7 +1,12 @@
 // roleController.js
 import { auth_firebase, db } from "../config/firebase.js";
 
-// Setar role no Auth e opcionalmente salvar no Firestore
+/**
+ * Define a role customizada de um usuário no Firebase Auth e atualiza no Firestore
+ * @param {Object} req - Objeto de requisição Express (body: uid, role)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Confirmação da operação
+ */
 export async function setUserRole(req, res) {
   try {
     const { uid, role } = req.body; // role: "admin" | "aluno" | "superAdmin"

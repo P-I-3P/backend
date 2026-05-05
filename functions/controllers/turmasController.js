@@ -2,7 +2,13 @@ import { db } from "../config/firebase.js";
 
 const COLLECTION = "turmas";
 
-// GET /turmas?cursoId=xxx
+/**
+ * Lista todas as turmas, opcionalmente filtradas por curso
+ * Ordena por data de criação decrescente
+ * @param {Object} req - Objeto de requisição Express (query: cursoId opcional)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object[]} Lista de turmas com id e dados
+ */
 export async function listarTurmas(req, res) {
   try {
     const { cursoId } = req.query;
@@ -19,7 +25,12 @@ export async function listarTurmas(req, res) {
   }
 }
 
-// GET /turmas/:id
+/**
+ * Busca uma turma específica pelo ID
+ * @param {Object} req - Objeto de requisição Express (params: id)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Dados da turma encontrada
+ */
 export async function buscarTurma(req, res) {
   try {
     const { id } = req.params;
@@ -34,7 +45,13 @@ export async function buscarTurma(req, res) {
   }
 }
 
-// POST /turmas
+/**
+ * Cria uma nova turma no sistema
+ * Valida campos obrigatórios e existência do curso
+ * @param {Object} req - Objeto de requisição Express (body: nome, cursoId, horario, periodoInicio, periodoFinal)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Dados da turma criada
+ */
 export async function criarTurma(req, res) {
   try {
     const { nome, cursoId, horario, periodoInicio, periodoFinal } = req.body;
@@ -77,7 +94,13 @@ export async function criarTurma(req, res) {
   }
 }
 
-// PUT /turmas/:id
+/**
+ * Atualiza os dados de uma turma existente
+ * Permite alterar curso, validando se existe
+ * @param {Object} req - Objeto de requisição Express (params: id, body: campos opcionais)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Dados atualizados da turma
+ */
 export async function atualizarTurma(req, res) {
   try {
     const { id } = req.params;
@@ -115,7 +138,12 @@ export async function atualizarTurma(req, res) {
   }
 }
 
-// DELETE /turmas/:id
+/**
+ * Deleta uma turma do sistema
+ * @param {Object} req - Objeto de requisição Express (params: id)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Mensagem de confirmação
+ */
 export async function deletarTurma(req, res) {
   try {
     const { id } = req.params;

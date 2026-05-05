@@ -8,6 +8,14 @@ import {
   analisarPdfSuspeito,
 } from "../services/pdfScanner.js";
 
+/**
+ * Processa um certificado PDF enviado por um aluno
+ * Realiza validações de segurança (tamanho, cabeçalho, estruturas suspeitas)
+ * Move arquivo aprovado para pasta final ou registra como suspeito
+ * @param {Object} req - Objeto de requisição Express (body: uid, storagePath, nomeArquivo)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Resultado do processamento
+ */
 export async function processarCertificado(req, res) {
   const { uid, storagePath, nomeArquivo } = req.body;
 

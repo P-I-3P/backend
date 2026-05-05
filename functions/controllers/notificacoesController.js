@@ -1,5 +1,12 @@
 import { admin, db } from "../config/firebase.js";
 
+/**
+ * Envia notificações push FCM para todos os admins quando um aluno faz upload de certificado
+ * Coleta tokens FCM ativos, envia mensagem multicast e limpa tokens inválidos
+ * @param {Object} req - Objeto de requisição Express (body: nomeAluno, nomeArquivo)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Resultado do envio das notificações
+ */
 export async function notificarAdminsUpload(req, res) {
   try {
     const { nomeAluno, nomeArquivo } = req.body;

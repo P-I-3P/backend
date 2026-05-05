@@ -1,7 +1,12 @@
 import { db, auth_firebase } from "../config/firebase.js";
 import { transporter } from "../config/nodemailer.js";
 
-// GET /admins - listar admins
+/**
+ * Lista todos os usuários com role de admin
+ * @param {Object} req - Objeto de requisição Express
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object[]} Lista de admins com id e dados
+ */
 export async function listarAdmins(req, res) {
   try {
     const snapshot = await db.collection("users").where("role", "==", "admin").get();
@@ -13,7 +18,13 @@ export async function listarAdmins(req, res) {
   }
 }
 
-// POST /admins - criar admin
+/**
+ * Cria um novo usuário admin no Firebase Auth e Firestore
+ * Gera senha temporária e envia e-mail com credenciais
+ * @param {Object} req - Objeto de requisição Express (body: nome, email)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Dados do admin criado
+ */
 export async function criarAdmin(req, res) {
   try {
     const { nome, email } = req.body;
@@ -78,7 +89,13 @@ export async function criarAdmin(req, res) {
   }
 }
 
-// PUT /admins/:id - atualizar admin
+/**
+ * Atualiza os dados de um admin existente
+ * Atualiza tanto no Firebase Auth quanto no Firestore
+ * @param {Object} req - Objeto de requisição Express (params: id, body: nome, email)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Dados atualizados do admin
+ */
 export async function atualizarAdmin(req, res) {
   try {
     const { id } = req.params;
@@ -109,7 +126,13 @@ export async function atualizarAdmin(req, res) {
   }
 }
 
-// DELETE /admins/:id - deletar admin
+/**
+ * Deleta um admin do sistema
+ * Remove tanto do Firebase Auth quanto do Firestore
+ * @param {Object} req - Objeto de requisição Express (params: id)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Mensagem de confirmação
+ */
 export async function deletarAdmin(req, res) {
   try {
     const { id } = req.params;

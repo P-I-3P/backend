@@ -2,7 +2,12 @@ import { db } from "../config/firebase.js";
 
 const COLLECTION = "cursos";
 
-// GET /cursos
+/**
+ * Lista todos os cursos ordenados por data de criação decrescente
+ * @param {Object} req - Objeto de requisição Express
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object[]} Lista de cursos com id e dados
+ */
 export async function listarCursos(req, res) {
   try {
     const snapshot = await db.collection(COLLECTION).orderBy("criadoEm", "desc").get();
@@ -14,7 +19,12 @@ export async function listarCursos(req, res) {
   }
 }
 
-// GET /cursos/:id
+/**
+ * Busca um curso específico pelo ID
+ * @param {Object} req - Objeto de requisição Express (params: id)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Dados do curso encontrado
+ */
 export async function buscarCurso(req, res) {
   try {
     const { id } = req.params;
@@ -29,7 +39,13 @@ export async function buscarCurso(req, res) {
   }
 }
 
-// POST /cursos
+/**
+ * Cria um novo curso no sistema
+ * Valida campos obrigatórios e unicidade do código
+ * @param {Object} req - Objeto de requisição Express (body: nome, codigo, turno, cargaHorariaComplementar)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Dados do curso criado
+ */
 export async function criarCurso(req, res) {
   try {
     const { nome, codigo, turno, cargaHorariaComplementar } = req.body;
@@ -58,7 +74,12 @@ export async function criarCurso(req, res) {
   }
 }
 
-// PUT /cursos/:id
+/**
+ * Atualiza os dados de um curso existente
+ * @param {Object} req - Objeto de requisição Express (params: id, body: campos opcionais)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Dados atualizados do curso
+ */
 export async function atualizarCurso(req, res) {
   try {
     const { id } = req.params;
@@ -85,7 +106,12 @@ export async function atualizarCurso(req, res) {
   }
 }
 
-// DELETE /cursos/:id
+/**
+ * Deleta um curso do sistema
+ * @param {Object} req - Objeto de requisição Express (params: id)
+ * @param {Object} res - Objeto de resposta Express
+ * @returns {Object} Mensagem de confirmação
+ */
 export async function deletarCurso(req, res) {
   try {
     const { id } = req.params;

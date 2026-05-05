@@ -1,3 +1,4 @@
+// Importações necessárias
 import { Router } from "express";
 import multer from "multer";
 import { 
@@ -10,8 +11,10 @@ import {
 } from "../controllers/certificadoController.js"; // Atenção: nome do arquivo corrigido para singular se necessário, ou ajuste conforme seu arquivo real
 import { requireAuth, requireAdmin } from "../middlewares/authMiddleware.js";
 
+// Criação do router para rotas de certificados
 const router = Router();
 
+<<<<<<< Updated upstream
 // Configuração do Multer para upload em memória (necessário para Firebase Functions)
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -31,5 +34,10 @@ router.patch("/:docId/rejeitar", ...requireAdmin, rejeitarCertificado);
 // Rota Pública (Validação por terceiros)
 // Não requer autenticação
 router.get("/validar/:codigo", validarCertificadoPublicamente);
+=======
+// Rota POST /certificados/processar - Processa e valida certificado PDF enviado (sem autenticação)
+router.post("/processar", processarCertificado);
+>>>>>>> Stashed changes
 
+// Exporta o router
 export default router;
