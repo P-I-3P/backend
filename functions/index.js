@@ -24,4 +24,4 @@ router.get("/", (req, res) => {
   res.json({ status: "API funcionando" });
 });
 
-export const app = functions.https.onRequest(router);
+export const app = functions.https.onRequest(router);  // config do firebase
