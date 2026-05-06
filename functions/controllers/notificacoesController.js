@@ -1,5 +1,11 @@
 import { admin, db } from "../config/firebase.js";
 
+/**
+ * Notifica administradores sobre novos uploads via Push (FCM).
+ * Envia para todos os tokens ativos e limpa automaticamente tokens expirados.
+ * 
+ * @param {Object} req - Body com nomeAluno e nomeArquivo.
+ */
 export async function notificarAdminsUpload(req, res) {
   try {
     const { nomeAluno, nomeArquivo } = req.body;
@@ -34,6 +40,7 @@ export async function notificarAdminsUpload(req, res) {
     // Remove duplicatas
     const uniqueTokens = [...new Set(tokens)];
 
+    // Define o payload da notificação push e os dados de contexto (data)
     const message = {
       notification: {
         title: "📄 Novo certificado enviado",
@@ -47,12 +54,13 @@ export async function notificarAdminsUpload(req, res) {
       },
     };
 
+    // Envio multicast para múltiplos dispositivos simultaneamente
     const response = await admin.messaging().sendEachForMulticast({
       tokens: uniqueTokens,
       ...message,
     });
 
-    // Remove tokens inválidos
+    // Manutenção de banco: identifica tokens que não são mais válidos (App desinstalado, etc)
     const invalidTokens = [];
     response.responses.forEach((r, i) => {
       if (!r.success && ["messaging/invalid-registration-token", "messaging/registration-token-not-registered"].includes(r.error?.code)) {
@@ -61,6 +69,7 @@ export async function notificarAdminsUpload(req, res) {
     });
 
     if (invalidTokens.length > 0) {
+      // Limpeza atômica via Batch de tokens que não existem mais ou foram desinstalados
       const batch = db.batch();
       adminsSnap.forEach((doc) => {
         const data = doc.data();

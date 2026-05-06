@@ -1,7 +1,12 @@
 // roleController.js
 import { auth_firebase, db } from "../config/firebase.js";
 
-// Setar role no Auth e opcionalmente salvar no Firestore
+/**
+ * Define manualmente o papel (role) de um usuário.
+ * Atualiza os Custom Claims no Firebase Auth e o campo 'role' no documento do usuário.
+ * @param {Object} req - Body com 'uid' e 'role' ("admin", "aluno", "superAdmin").
+ * @param {Object} res - Confirmação da alteração.
+ */
 export async function setUserRole(req, res) {
   try {
     const { uid, role } = req.body; // role: "admin" | "aluno" | "superAdmin"

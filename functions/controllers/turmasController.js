@@ -2,11 +2,15 @@ import { db } from "../config/firebase.js";
 
 const COLLECTION = "turmas";
 
-// GET /turmas?cursoId=xxx
+/**
+ * Lista turmas cadastradas.
+ * @query {string} cursoId - Filtra turmas de um curso específico.
+ */
 export async function listarTurmas(req, res) {
   try {
     const { cursoId } = req.query;
     let query = db.collection(COLLECTION).orderBy("criadoEm", "desc");
+    // Adiciona filtro se um ID de curso específico for fornecido
     if (cursoId) {
       query = db.collection(COLLECTION).where("cursoId", "==", cursoId).orderBy("criadoEm", "desc");
     }
@@ -19,7 +23,11 @@ export async function listarTurmas(req, res) {
   }
 }
 
-// GET /turmas/:id
+/**
+ * Busca os detalhes de uma turma específica pelo ID.
+ * @param {Object} req - Parâmetros da requisição contendo o id.
+ * @param {Object} res - Resposta com os dados da turma.
+ */
 export async function buscarTurma(req, res) {
   try {
     const { id } = req.params;
@@ -34,7 +42,12 @@ export async function buscarTurma(req, res) {
   }
 }
 
-// POST /turmas
+/**
+ * Cria uma nova turma associada a um curso.
+ * Implementa denormalização salvando nome/código do curso para otimizar leituras.
+ * @param {Object} req - Dados da turma no corpo da requisição.
+ * @param {Object} res - Resposta com a turma criada.
+ */
 export async function criarTurma(req, res) {
   try {
     const { nome, cursoId, horario, periodoInicio, periodoFinal } = req.body;
@@ -42,7 +55,7 @@ export async function criarTurma(req, res) {
       return res.status(400).json({ message: "Campos nome, cursoId, horario, periodoInicio e periodoFinal são obrigatórios." });
     }
 
-    // Verifica se o curso existe
+    // Garantia de integridade referencial: verifica se o curso pai existe
     const cursoDoc = await db.collection("cursos").doc(cursoId).get();
     if (!cursoDoc.exists) {
       return res.status(404).json({ message: "Curso não encontrado." });
@@ -50,6 +63,7 @@ export async function criarTurma(req, res) {
 
     const cursoData = cursoDoc.data();
 
+    // Denormalização: salvamos o nome e código do curso na turma para evitar joins excessivos em listagens
     const docRef = await db.collection(COLLECTION).add({
       nome,
       cursoId,
@@ -77,7 +91,12 @@ export async function criarTurma(req, res) {
   }
 }
 
-// PUT /turmas/:id
+/**
+ * Atualiza as informações de uma turma.
+ * Se o cursoId mudar, atualiza também os dados denormalizados do curso.
+ * @param {Object} req - ID na URL e campos para atualizar no body.
+ * @param {Object} res - Resposta com dados atualizados.
+ */
 export async function atualizarTurma(req, res) {
   try {
     const { id } = req.params;
@@ -95,6 +114,7 @@ export async function atualizarTurma(req, res) {
     if (periodoInicio) updateData.periodoInicio = periodoInicio;
     if (periodoFinal) updateData.periodoFinal = periodoFinal;
 
+    // Se o curso for alterado, precisamos buscar as novas informações do curso pai
     if (cursoId && cursoId !== doc.data().cursoId) {
       const cursoDoc = await db.collection("cursos").doc(cursoId).get();
       if (!cursoDoc.exists) {
@@ -115,7 +135,10 @@ export async function atualizarTurma(req, res) {
   }
 }
 
-// DELETE /turmas/:id
+/**
+ * Exclui uma turma permanentemente.
+ * @param {Object} req - ID da turma nos parâmetros.
+ */
 export async function deletarTurma(req, res) {
   try {
     const { id } = req.params;

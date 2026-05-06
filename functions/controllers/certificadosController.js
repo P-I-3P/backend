@@ -8,6 +8,13 @@ import {
   analisarPdfSuspeito,
 } from "../services/pdfScanner.js";
 
+/**
+ * Processa um certificado recém-enviado para o Cloud Storage.
+ * Realiza scan de segurança, move o arquivo se aprovado ou remove se suspeito.
+ * 
+ * @param {Object} req - Body contendo uid, storagePath e nomeArquivo.
+ * @returns {Promise<Object>} Resposta JSON com o status do processamento.
+ */
 export async function processarCertificado(req, res) {
   const { uid, storagePath, nomeArquivo } = req.body;
 
@@ -21,13 +28,13 @@ export async function processarCertificado(req, res) {
 
   try {
     const fileName = path.basename(storagePath);
+    // Define caminho temporário no SO para análise (Cloud Functions têm diretório /tmp gravável)
     tempFilePath = path.join(os.tmpdir(), `${Date.now()}-${fileName}`);
 
-    // baixa do Storage
-    await bucket.file(storagePath).download({
-      destination: tempFilePath,
-    });
+    // Faz o download do arquivo do bucket para análise local no servidor
+    await bucket.file(storagePath).download({ destination: tempFilePath });
 
+    // 1. Validação de Tamanho: Previne ataques de negação de serviço (DoS) por arquivos gigantes
     const tamanhoOk = await validarTamanho(tempFilePath);
     if (!tamanhoOk) {
       await bucket.file(storagePath).delete({ ignoreNotFound: true });
@@ -45,6 +52,7 @@ export async function processarCertificado(req, res) {
       });
     }
 
+    // 2. Validação de Cabeçalho: Garante que a extensão .pdf corresponde ao conteúdo (Magic Bytes)
     const cabecalhoOk = await validarCabecalhoPdf(tempFilePath);
     if (!cabecalhoOk) {
       await bucket.file(storagePath).delete({ ignoreNotFound: true });
@@ -62,6 +70,7 @@ export async function processarCertificado(req, res) {
       });
     }
 
+    // 3. Análise de Segurança: Varre o binário em busca de scripts (/JS, /JavaScript, etc.)
     const analise = await analisarPdfSuspeito(tempFilePath);
     if (analise.suspeito) {
       await bucket.file(storagePath).delete({ ignoreNotFound: true });
@@ -80,10 +89,11 @@ export async function processarCertificado(req, res) {
       });
     }
 
-    // move para pasta final
+    // Se aprovado, move o arquivo da pasta temporária para a definitiva no Storage
     const finalPath = storagePath.replace("certificados_temp/", "certificados/");
     await bucket.file(storagePath).move(finalPath);
 
+    // Cria o registro oficial no Firestore
     await db.collection("certificados_horas_complementares").add({
       uid,
       nomeArquivo,
@@ -105,6 +115,7 @@ export async function processarCertificado(req, res) {
       error: "Erro ao analisar certificado",
     });
   } finally {
+    // Limpeza crucial: remove o arquivo do diretório temporário do SO após o processamento
     if (tempFilePath) {
       try {
         await fs.unlink(tempFilePath);

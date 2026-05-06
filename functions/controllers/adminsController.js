@@ -1,7 +1,12 @@
 import { db, auth_firebase } from "../config/firebase.js";
 import { transporter } from "../config/nodemailer.js";
 
-// GET /admins - listar admins
+/**
+ * Lista todos os usuários com papel de administrador ("admin").
+ * @param {Object} req - Objeto de requisição Express.
+ * @param {Object} res - Objeto de resposta Express.
+ * @returns {Promise<Object>} JSON contendo a lista de administradores.
+ */
 export async function listarAdmins(req, res) {
   try {
     const snapshot = await db.collection("users").where("role", "==", "admin").get();
@@ -13,7 +18,13 @@ export async function listarAdmins(req, res) {
   }
 }
 
-// POST /admins - criar admin
+/**
+ * Cria um novo administrador.
+ * Registra no Firebase Auth, define Custom Claims de role e envia e-mail de boas-vindas.
+ * @param {Object} req - Requisição contendo 'nome' e 'email' no body.
+ * @param {Object} res - Resposta da operação.
+ * @returns {Promise<Object>} Dados do admin criado ou erro.
+ */
 export async function criarAdmin(req, res) {
   try {
     const { nome, email } = req.body;
@@ -21,16 +32,20 @@ export async function criarAdmin(req, res) {
       return res.status(400).json({ message: "Campos nome e email são obrigatórios." });
     }
 
+    // Estratégia de senha inicial: e-mail + sufixo (deve ser trocada no primeiro acesso)
     const senhaTemporaria = email.split("@")[0] + "2025!";
 
+    // Criação no Firebase Authentication (Identidade)
     const userRecord = await auth_firebase.createUser({
       email,
       displayName: nome,
       password: senhaTemporaria,
     });
 
+    // Define privilégios de acesso via Custom Claims (segurança em nível de token JWT)
     await auth_firebase.setCustomUserClaims(userRecord.uid, { role: "admin" });
 
+    // Persistência do perfil estendido no Firestore
     await db.collection("users").doc(userRecord.uid).set({
       nome,
       email,
@@ -78,7 +93,12 @@ export async function criarAdmin(req, res) {
   }
 }
 
-// PUT /admins/:id - atualizar admin
+/**
+ * Atualiza nome ou e-mail de um administrador.
+ * Sincroniza as alterações no Firebase Auth e no Firestore.
+ * @param {Object} req - Parâmetro 'id' na URL e dados no body.
+ * @param {Object} res - Resposta com dados atualizados.
+ */
 export async function atualizarAdmin(req, res) {
   try {
     const { id } = req.params;
@@ -109,7 +129,11 @@ export async function atualizarAdmin(req, res) {
   }
 }
 
-// DELETE /admins/:id - deletar admin
+/**
+ * Remove um administrador permanentemente do Firebase Auth e do Firestore.
+ * @param {Object} req - Parâmetro 'id' na URL.
+ * @param {Object} res - Mensagem de sucesso ou erro.
+ */
 export async function deletarAdmin(req, res) {
   try {
     const { id } = req.params;

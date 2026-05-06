@@ -1,7 +1,12 @@
 import { db, auth_firebase } from "../config/firebase.js";
 import { transporter } from "../config/nodemailer.js";
 
-// GET /alunos
+/**
+ * Lista alunos cadastrados, permitindo filtragem por curso.
+ * @param {Object} req - Requisição com query param 'cursoId' opcional.
+ * @param {Object} res - Array de alunos encontrados.
+ * @returns {Promise<Object>}
+ */
 export async function listarAlunos(req, res) {
   try {
     const { cursoId } = req.query;
@@ -18,7 +23,12 @@ export async function listarAlunos(req, res) {
   }
 }
 
-// POST /alunos
+/**
+ * Cadastra um novo aluno no sistema.
+ * Valida curso/turma, cria conta no Auth, salva no Firestore e envia e-mail formatado.
+ * @param {Object} req - Body com nome, email, cursoId e turmaId.
+ * @param {Object} res - Status da criação.
+ */
 export async function criarAluno(req, res) {
   try {
     const { nome, email, cursoId, turmaId } = req.body;
@@ -72,6 +82,7 @@ export async function criarAluno(req, res) {
 
     const senhaTemporaria = email.split("@")[0] + "2025!";
 
+// Disparo de e-mail transacional via Nodemailer
 await transporter.sendMail({
   from: `"Horas Complementares - Senac" <${process.env.USER_GMAIL}>`,
   to: email,
