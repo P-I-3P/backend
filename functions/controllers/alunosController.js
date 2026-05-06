@@ -156,3 +156,87 @@ await transporter.sendMail({
     return res.status(500).json({ message: "Erro ao cadastrar aluno." });
   }
 }
+
+/**
+ * Atualiza os dados de um aluno.
+ * Sincroniza as alterações no Firebase Auth e no Firestore, incluindo curso e turma.
+ * @param {Object} req - Parâmetro 'id' na URL e dados no body.
+ * @param {Object} res - Resposta com dados atualizados.
+ */
+export async function atualizarAluno(req, res) {
+  try {
+    const { id } = req.params;
+    const { nome, email, cursoId, turmaId } = req.body;
+
+    const docRef = db.collection("users").doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists || doc.data().role !== "aluno") {
+      return res.status(404).json({ message: "Aluno não encontrado." });
+    }
+
+    const updateData = {};
+    if (nome) {
+      updateData.nome = nome;
+      await auth_firebase.updateUser(id, { displayName: nome });
+    }
+    if (email) {
+      updateData.email = email;
+      await auth_firebase.updateUser(id, { email });
+    }
+
+    // Se o curso mudar, atualiza as informações denormalizadas
+    if (cursoId && cursoId !== doc.data().cursoId) {
+      const cursoDoc = await db.collection("cursos").doc(cursoId).get();
+      if (!cursoDoc.exists) {
+        return res.status(404).json({ message: "Curso não encontrado." });
+      }
+      updateData.cursoId = cursoId;
+      updateData.cursoCodigo = cursoDoc.data().codigo;
+      updateData.cursoNome = cursoDoc.data().nome;
+    }
+
+    // Se a turma mudar, busca o novo nome da turma
+    if (turmaId && turmaId !== doc.data().turmaId) {
+      const turmaDoc = await db.collection("turmas").doc(turmaId).get();
+      if (!turmaDoc.exists) {
+        return res.status(404).json({ message: "Turma não encontrada." });
+      }
+      updateData.turmaId = turmaId;
+      updateData.turmaNome = turmaDoc.data().nome;
+    }
+
+    updateData.updatedAt = Date.now();
+
+    await docRef.update(updateData);
+    return res.json({ id, ...doc.data(), ...updateData });
+  } catch (error) {
+    console.error("Erro ao atualizar aluno:", error);
+    return res.status(500).json({ message: "Erro ao atualizar aluno." });
+  }
+}
+
+/**
+ * Remove um aluno permanentemente do Firebase Auth e do Firestore.
+ * @param {Object} req - Parâmetro 'id' na URL.
+ * @param {Object} res - Mensagem de sucesso ou erro.
+ */
+export async function deletarAluno(req, res) {
+  try {
+    const { id } = req.params;
+
+    const docRef = db.collection("users").doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists || doc.data().role !== "aluno") {
+      return res.status(404).json({ message: "Aluno não encontrado." });
+    }
+
+    // Remove do Auth e depois do Firestore
+    await auth_firebase.deleteUser(id);
+    await docRef.delete();
+
+    return res.json({ message: "Aluno excluído com sucesso." });
+  } catch (error) {
+    console.error("Erro ao deletar aluno:", error);
+    return res.status(500).json({ message: "Erro ao deletar aluno." });
+  }
+}
