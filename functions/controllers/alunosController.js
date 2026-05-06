@@ -2,10 +2,12 @@ import { db, auth_firebase } from "../config/firebase.js";
 import { transporter } from "../config/nodemailer.js";
 
 /**
- * Lista todos os alunos, opcionalmente filtrados por curso
- * @param {Object} req - Objeto de requisição Express (query: cursoId opcional)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object[]} Lista de alunos com id e dados
+ * Lista os alunos cadastrados no sistema.
+ * Permite filtragem opcional por curso.
+ * 
+ * @param {Object} req - Requisição com query param cursoId opcional.
+ * @param {Object} res - Resposta com array de alunos.
+ * @returns {Promise<Object>}
  */
 export async function listarAlunos(req, res) {
   try {
@@ -24,11 +26,12 @@ export async function listarAlunos(req, res) {
 }
 
 /**
- * Cria um novo aluno no sistema
- * Valida curso e turma, cria usuário no Auth, envia e-mail de boas-vindas
- * @param {Object} req - Objeto de requisição Express (body: nome, email, cursoId, turmaId opcional)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object} Dados do aluno criado
+ * Cadastra um novo aluno no sistema.
+ * Valida a existência do curso/turma, cria a conta no Auth com papel "aluno",
+ * salva os dados acadêmicos no Firestore e envia o e-mail de boas-vindas formatado.
+ * 
+ * @param {Object} req - Corpo contendo nome, email, cursoId e turmaId.
+ * @param {Object} res - Status da criação.
  */
 export async function criarAluno(req, res) {
   try {

@@ -15,11 +15,20 @@ import { requireAuth, requireAdmin } from "../middlewares/authMiddleware.js";
 const router = Router();
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 // Configuração do Multer para upload em memória (necessário para Firebase Functions)
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // Limite de 10MB
 });
+=======
+/**
+ * Rota de processamento de certificados.
+ * Acionada após o upload do arquivo para realizar scan de vírus/segurança,
+ * validar cabeçalhos PDF e mover para o armazenamento definitivo.
+ */
+router.post("/processar", processarCertificado);
+>>>>>>> Stashed changes
 
 // Rotas do Aluno
 // Upload do PDF (campo do form-data deve ser 'pdf')

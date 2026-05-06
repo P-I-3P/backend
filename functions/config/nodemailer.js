@@ -4,6 +4,10 @@ import nodemailer from 'nodemailer';
 
 dotenv.config();
 
+/**
+ * Configuração do transportador Nodemailer para envio de e-mails via Gmail.
+ * Utiliza variáveis de ambiente para credenciais sensíveis.
+ */
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -12,6 +16,9 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+/**
+ * Verifica a conexão com o servidor de e-mail na inicialização.
+ */
 transporter.verify((error, success) => {
   if (error) {
     console.error('Erro no transporter do Nodemailer:', error);
@@ -21,4 +28,4 @@ transporter.verify((error, success) => {
 });
 
 
-export  { transporter } ;
+export { transporter };

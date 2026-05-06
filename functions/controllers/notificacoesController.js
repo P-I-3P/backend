@@ -1,11 +1,19 @@
 import { admin, db } from "../config/firebase.js";
 
 /**
+<<<<<<< Updated upstream
  * Envia notificações push FCM para todos os admins quando um aluno faz upload de certificado
  * Coleta tokens FCM ativos, envia mensagem multicast e limpa tokens inválidos
  * @param {Object} req - Objeto de requisição Express (body: nomeAluno, nomeArquivo)
  * @param {Object} res - Objeto de resposta Express
  * @returns {Object} Resultado do envio das notificações
+=======
+ * Envia notificações push (FCM) para todos os administradores quando um novo certificado é enviado.
+ * 
+ * @param {Object} req - Objeto de requisição do Express contendo nomeAluno e nomeArquivo no corpo.
+ * @param {Object} res - Objeto de resposta do Express.
+ * @returns {Promise<Object>} Resposta JSON indicando o sucesso e a contagem de envios.
+>>>>>>> Stashed changes
  */
 export async function notificarAdminsUpload(req, res) {
   try {
@@ -54,12 +62,14 @@ export async function notificarAdminsUpload(req, res) {
       },
     };
 
+    // Envia a mensagem para todos os tokens coletados
     const response = await admin.messaging().sendEachForMulticast({
       tokens: uniqueTokens,
       ...message,
     });
 
-    // Remove tokens inválidos
+    // Identifica tokens que não são mais válidos (expirados ou desinstalados)
+    // para limpeza posterior no banco de dados.
     const invalidTokens = [];
     response.responses.forEach((r, i) => {
       if (!r.success && ["messaging/invalid-registration-token", "messaging/registration-token-not-registered"].includes(r.error?.code)) {
@@ -67,6 +77,7 @@ export async function notificarAdminsUpload(req, res) {
       }
     });
 
+    // Remove os tokens inválidos do Firestore para manter a base limpa
     if (invalidTokens.length > 0) {
       const batch = db.batch();
       adminsSnap.forEach((doc) => {

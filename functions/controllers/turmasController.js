@@ -3,11 +3,16 @@ import { db } from "../config/firebase.js";
 const COLLECTION = "turmas";
 
 /**
+<<<<<<< Updated upstream
  * Lista todas as turmas, opcionalmente filtradas por curso
  * Ordena por data de criação decrescente
  * @param {Object} req - Objeto de requisição Express (query: cursoId opcional)
  * @param {Object} res - Objeto de resposta Express
  * @returns {Object[]} Lista de turmas com id e dados
+=======
+ * Lista as turmas cadastradas. 
+ * Se um cursoId for fornecido, filtra as turmas pertencentes a esse curso.
+>>>>>>> Stashed changes
  */
 export async function listarTurmas(req, res) {
   try {
@@ -26,10 +31,14 @@ export async function listarTurmas(req, res) {
 }
 
 /**
+<<<<<<< Updated upstream
  * Busca uma turma específica pelo ID
  * @param {Object} req - Objeto de requisição Express (params: id)
  * @param {Object} res - Objeto de resposta Express
  * @returns {Object} Dados da turma encontrada
+=======
+ * Retorna os detalhes de uma turma específica.
+>>>>>>> Stashed changes
  */
 export async function buscarTurma(req, res) {
   try {
@@ -46,11 +55,16 @@ export async function buscarTurma(req, res) {
 }
 
 /**
+<<<<<<< Updated upstream
  * Cria uma nova turma no sistema
  * Valida campos obrigatórios e existência do curso
  * @param {Object} req - Objeto de requisição Express (body: nome, cursoId, horario, periodoInicio, periodoFinal)
  * @param {Object} res - Objeto de resposta Express
  * @returns {Object} Dados da turma criada
+=======
+ * Cria uma nova turma vinculada a um curso existente.
+ * Copia informações denormalizadas do curso (nome/codigo) para facilitar buscas futuras.
+>>>>>>> Stashed changes
  */
 export async function criarTurma(req, res) {
   try {
@@ -59,7 +73,6 @@ export async function criarTurma(req, res) {
       return res.status(400).json({ message: "Campos nome, cursoId, horario, periodoInicio e periodoFinal são obrigatórios." });
     }
 
-    // Verifica se o curso existe
     const cursoDoc = await db.collection("cursos").doc(cursoId).get();
     if (!cursoDoc.exists) {
       return res.status(404).json({ message: "Curso não encontrado." });
@@ -95,11 +108,16 @@ export async function criarTurma(req, res) {
 }
 
 /**
+<<<<<<< Updated upstream
  * Atualiza os dados de uma turma existente
  * Permite alterar curso, validando se existe
  * @param {Object} req - Objeto de requisição Express (params: id, body: campos opcionais)
  * @param {Object} res - Objeto de resposta Express
  * @returns {Object} Dados atualizados da turma
+=======
+ * Atualiza os dados de uma turma. 
+ * Caso o cursoId seja alterado, atualiza também os metadados do curso vinculados à turma.
+>>>>>>> Stashed changes
  */
 export async function atualizarTurma(req, res) {
   try {
@@ -139,10 +157,14 @@ export async function atualizarTurma(req, res) {
 }
 
 /**
+<<<<<<< Updated upstream
  * Deleta uma turma do sistema
  * @param {Object} req - Objeto de requisição Express (params: id)
  * @param {Object} res - Objeto de resposta Express
  * @returns {Object} Mensagem de confirmação
+=======
+ * Remove uma turma do sistema.
+>>>>>>> Stashed changes
  */
 export async function deletarTurma(req, res) {
   try {

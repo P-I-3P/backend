@@ -2,10 +2,11 @@ import { db, auth_firebase } from "../config/firebase.js";
 import { transporter } from "../config/nodemailer.js";
 
 /**
- * Lista todos os usuários com role de admin
- * @param {Object} req - Objeto de requisição Express
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object[]} Lista de admins com id e dados
+ * Lista todos os usuários cadastrados com o papel de administrador ("admin").
+ * 
+ * @param {Object} req - Objeto de requisição do Express.
+ * @param {Object} res - Objeto de resposta do Express.
+ * @returns {Promise<Object>} Lista de administradores em formato JSON.
  */
 export async function listarAdmins(req, res) {
   try {
@@ -19,11 +20,13 @@ export async function listarAdmins(req, res) {
 }
 
 /**
- * Cria um novo usuário admin no Firebase Auth e Firestore
- * Gera senha temporária e envia e-mail com credenciais
- * @param {Object} req - Objeto de requisição Express (body: nome, email)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object} Dados do admin criado
+ * Cria um novo administrador no sistema.
+ * O processo inclui: criação no Firebase Auth, definição de Custom Claims,
+ * persistência no Firestore e envio de e-mail com senha temporária.
+ * 
+ * @param {Object} req - Requisição contendo nome e email.
+ * @param {Object} res - Resposta da API.
+ * @returns {Promise<Object>} Dados do admin criado ou mensagem de erro.
  */
 export async function criarAdmin(req, res) {
   try {
@@ -32,6 +35,7 @@ export async function criarAdmin(req, res) {
       return res.status(400).json({ message: "Campos nome e email são obrigatórios." });
     }
 
+    // Gera uma senha temporária simples baseada no e-mail
     const senhaTemporaria = email.split("@")[0] + "2025!";
 
     const userRecord = await auth_firebase.createUser({
@@ -40,6 +44,7 @@ export async function criarAdmin(req, res) {
       password: senhaTemporaria,
     });
 
+    // Define a permissão de admin no token JWT do usuário
     await auth_firebase.setCustomUserClaims(userRecord.uid, { role: "admin" });
 
     await db.collection("users").doc(userRecord.uid).set({
@@ -90,11 +95,12 @@ export async function criarAdmin(req, res) {
 }
 
 /**
- * Atualiza os dados de um admin existente
- * Atualiza tanto no Firebase Auth quanto no Firestore
- * @param {Object} req - Objeto de requisição Express (params: id, body: nome, email)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object} Dados atualizados do admin
+ * Atualiza os dados de um administrador existente.
+ * Sincroniza as alterações entre o Firebase Auth (displayName/email) e o Firestore.
+ * 
+ * @param {Object} req - Requisição com o ID nos parâmetros e novos dados no corpo.
+ * @param {Object} res - Resposta com os dados atualizados.
+ * @returns {Promise<Object>} Objeto atualizado.
  */
 export async function atualizarAdmin(req, res) {
   try {
@@ -127,11 +133,11 @@ export async function atualizarAdmin(req, res) {
 }
 
 /**
- * Deleta um admin do sistema
- * Remove tanto do Firebase Auth quanto do Firestore
- * @param {Object} req - Objeto de requisição Express (params: id)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object} Mensagem de confirmação
+ * Remove um administrador do sistema.
+ * Exclui a conta tanto do Firebase Auth quanto do documento no Firestore.
+ * 
+ * @param {Object} req - Requisição contendo o ID do admin.
+ * @param {Object} res - Status da operação.
  */
 export async function deletarAdmin(req, res) {
   try {

@@ -3,10 +3,9 @@ import { db } from "../config/firebase.js";
 const COLLECTION = "cursos";
 
 /**
- * Lista todos os cursos ordenados por data de criação decrescente
- * @param {Object} req - Objeto de requisição Express
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object[]} Lista de cursos com id e dados
+ * Obtém a lista de todos os cursos, ordenados pela data de criação.
+ * 
+ * @returns {Promise<Array>} Array de objetos de curso.
  */
 export async function listarCursos(req, res) {
   try {
@@ -20,10 +19,9 @@ export async function listarCursos(req, res) {
 }
 
 /**
- * Busca um curso específico pelo ID
- * @param {Object} req - Objeto de requisição Express (params: id)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object} Dados do curso encontrado
+ * Busca os detalhes de um curso específico pelo seu ID único.
+ * 
+ * @param {string} req.params.id - ID do documento no Firestore.
  */
 export async function buscarCurso(req, res) {
   try {
@@ -40,11 +38,10 @@ export async function buscarCurso(req, res) {
 }
 
 /**
- * Cria um novo curso no sistema
- * Valida campos obrigatórios e unicidade do código
- * @param {Object} req - Objeto de requisição Express (body: nome, codigo, turno, cargaHorariaComplementar)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object} Dados do curso criado
+ * Cria um novo curso na instituição.
+ * Valida se o código do curso já existe para evitar duplicatas.
+ * 
+ * @param {Object} req.body - Dados do curso (nome, codigo, turno, carga horária).
  */
 export async function criarCurso(req, res) {
   try {
@@ -53,7 +50,6 @@ export async function criarCurso(req, res) {
       return res.status(400).json({ message: "Campos nome, codigo, turno e cargaHorariaComplementar são obrigatórios." });
     }
 
-    // Verifica duplicidade de código
     const existing = await db.collection(COLLECTION).where("codigo", "==", codigo).get();
     if (!existing.empty) {
       return res.status(409).json({ message: "Já existe um curso com este código." });
@@ -75,10 +71,8 @@ export async function criarCurso(req, res) {
 }
 
 /**
- * Atualiza os dados de um curso existente
- * @param {Object} req - Objeto de requisição Express (params: id, body: campos opcionais)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object} Dados atualizados do curso
+ * Atualiza as informações de um curso existente.
+ * Realiza merge dos novos dados com os campos atuais.
  */
 export async function atualizarCurso(req, res) {
   try {
@@ -107,10 +101,7 @@ export async function atualizarCurso(req, res) {
 }
 
 /**
- * Deleta um curso do sistema
- * @param {Object} req - Objeto de requisição Express (params: id)
- * @param {Object} res - Objeto de resposta Express
- * @returns {Object} Mensagem de confirmação
+ * Remove um curso permanentemente do sistema.
  */
 export async function deletarCurso(req, res) {
   try {
