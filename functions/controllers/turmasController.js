@@ -12,10 +12,12 @@ export async function listarTurmas(req, res) {
     let query = db.collection(COLLECTION).orderBy("criadoEm", "desc");
     // Adiciona filtro se um ID de curso específico for fornecido
     if (cursoId) {
-      query = db.collection(COLLECTION).where("cursoId", "==", cursoId).orderBy("criadoEm", "desc");
+      query = db.collection(COLLECTION).where("cursoId", "==", cursoId);
     }
     const snapshot = await query.get();
-    const turmas = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const turmas = snapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (b.criadoEm || "").localeCompare(a.criadoEm || ""));
     return res.json(turmas);
   } catch (error) {
     console.error("Erro ao listar turmas:", error);

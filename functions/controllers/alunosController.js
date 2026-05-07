@@ -10,12 +10,11 @@ import { transporter } from "../config/nodemailer.js";
 export async function listarAlunos(req, res) {
   try {
     const { cursoId } = req.query;
-    let query = db.collection("users").where("role", "==", "aluno");
+    const snapshot = await db.collection("users").where("role", "==", "aluno").get();
+    let alunos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     if (cursoId) {
-      query = query.where("cursoId", "==", cursoId);
+      alunos = alunos.filter((aluno) => aluno.cursoId === cursoId || aluno.cursoIds?.includes(cursoId));
     }
-    const snapshot = await query.get();
-    const alunos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     return res.json(alunos);
   } catch (error) {
     console.error("Erro ao listar alunos:", error);
@@ -31,9 +30,14 @@ export async function listarAlunos(req, res) {
  */
 export async function criarAluno(req, res) {
   try {
-    const { nome, email, cursoId, turmaId } = req.body;
-    if (!nome || !email || !cursoId) {
+    const { nome, email, cursoId: cursoIdBody, cursoIds, turmaId } = req.body;
+    const cursoId = cursoIdBody || cursoIds?.[0];
+    if (!nome || !email) {
       return res.status(400).json({ message: "Campos nome, email e cursoId são obrigatórios." });
+    }
+
+    if (!cursoId) {
+      return res.status(400).json({ message: "Informe ao menos um curso para o aluno." });
     }
 
     // Verifica se o curso existe
@@ -70,6 +74,7 @@ export async function criarAluno(req, res) {
       cursoId,
       cursoCodigo: cursoDoc.data().codigo,
       cursoNome: cursoDoc.data().nome,
+      cursoIds: Array.isArray(cursoIds) && cursoIds.length ? cursoIds : [cursoId],
       createdAt: Date.now(),
       createdBy: "admin",
     };

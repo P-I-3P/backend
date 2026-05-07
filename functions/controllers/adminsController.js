@@ -1,6 +1,42 @@
 import { db, auth_firebase } from "../config/firebase.js";
 import { transporter } from "../config/nodemailer.js";
 
+async function montarVinculosCursos(cursoIds, cursoId) {
+  const ids = Array.isArray(cursoIds) ? cursoIds : cursoId ? [cursoId] : [];
+  const uniqueIds = [...new Set(ids.filter((id) => typeof id === "string" && id.trim()).map((id) => id.trim()))];
+
+  if (uniqueIds.length === 0) {
+    return { error: { status: 400, message: "Informe ao menos um curso para o coordenador." } };
+  }
+
+  const cursoDocs = await Promise.all(uniqueIds.map((id) => db.collection("cursos").doc(id).get()));
+  const missingCurso = cursoDocs.find((doc) => !doc.exists);
+  if (missingCurso) {
+    return { error: { status: 404, message: "Curso nao encontrado." } };
+  }
+
+  const cursos = cursoDocs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      nome: data.nome,
+      codigo: data.codigo || null,
+      turno: data.turno || null,
+    };
+  });
+
+  const cursoPrincipal = cursos[0];
+  return {
+    data: {
+      cursoId: cursoPrincipal.id,
+      cursoNome: cursoPrincipal.nome,
+      cursoCodigo: cursoPrincipal.codigo,
+      cursoIds: uniqueIds,
+      cursos,
+    },
+  };
+}
+
 /**
  * Lista todos os usuários com papel de administrador ("admin").
  * @param {Object} req - Objeto de requisição Express.
@@ -27,12 +63,17 @@ export async function listarAdmins(req, res) {
  */
 export async function criarAdmin(req, res) {
   try {
-    const { nome, email } = req.body;
+    const { nome, cursoId, cursoIds } = req.body;
     if (!nome || !email) {
       return res.status(400).json({ message: "Campos nome e email são obrigatórios." });
     }
 
     // Estratégia de senha inicial: e-mail + sufixo (deve ser trocada no primeiro acesso)
+    const vinculosCursos = await montarVinculosCursos(cursoIds, cursoId);
+    if (vinculosCursos.error) {
+      return res.status(vinculosCursos.error.status).json({ message: vinculosCursos.error.message });
+    }
+
     const senhaTemporaria = email.split("@")[0] + "2025!";
 
     // Criação no Firebase Authentication (Identidade)
@@ -50,6 +91,7 @@ export async function criarAdmin(req, res) {
       nome,
       email,
       role: "admin",
+      ...vinculosCursos.data,
       createdAt: Date.now(),
       createdBy: req.user.uid,
     });
@@ -82,6 +124,7 @@ export async function criarAdmin(req, res) {
       uid: userRecord.uid,
       nome,
       email,
+      ...vinculosCursos.data,
       message: "Admin cadastrado com sucesso.",
     });
   } catch (error) {
@@ -102,7 +145,7 @@ export async function criarAdmin(req, res) {
 export async function atualizarAdmin(req, res) {
   try {
     const { id } = req.params;
-    const { nome, email } = req.body;
+    const { nome, email, cursoId, cursoIds } = req.body;
 
     const docRef = db.collection("users").doc(id);
     const doc = await docRef.get();
@@ -110,15 +153,23 @@ export async function atualizarAdmin(req, res) {
       return res.status(404).json({ message: "Admin não encontrado." });
     }
 
+    if (req.body.email !== undefined && req.body.email !== doc.data().email) {
+      return res.status(400).json({ message: "O e-mail do coordenador nao pode ser alterado." });
+    }
+
     const updateData = {};
     if (nome) {
       updateData.nome = nome;
       await auth_firebase.updateUser(id, { displayName: nome });
     }
-    if (email) {
-      updateData.email = email;
-      await auth_firebase.updateUser(id, { email });
+    if (cursoIds !== undefined || cursoId !== undefined) {
+      const vinculosCursos = await montarVinculosCursos(cursoIds, cursoId);
+      if (vinculosCursos.error) {
+        return res.status(vinculosCursos.error.status).json({ message: vinculosCursos.error.message });
+      }
+      Object.assign(updateData, vinculosCursos.data);
     }
+
     updateData.atualizadoEm = new Date().toISOString();
 
     await docRef.update(updateData);
